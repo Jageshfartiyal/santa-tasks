@@ -1,0 +1,38 @@
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.back:hover {
+  color: var(--text);
+}
+
+.header {
+  margin-bottom: 2rem;
+  background-image: var(--hover-tint);
+}
+
+.headerTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.titleBlock {
+  display: grid;
+  gap: 0.6rem;
+  min-width: 0;
+  flex: 1 1 260px;
+}
+
+.description {
+  margin: 1rem 0 0;
+  overflow-wrap: anywhere;
+}

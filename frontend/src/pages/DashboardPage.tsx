@@ -1,40 +1,71 @@
-import { Link } from 'react-router';
+import { CheckCircle2, Clock, FolderKanban, ListChecks, ListTodo, Plus } from 'lucide-react';
+import { useEffect } from 'react';
+import { Link, useLocation } from 'react-router';
 import { errorMessage } from '../api/client';
+import { useAuth } from '../auth/AuthContext';
+import { Badge } from '../components/Badge';
 import { EmptyState, ErrorState, Loading } from '../components/States';
 import { useProjects, useStats } from '../hooks/queries';
+import styles from './DashboardPage.module.css';
+
+function greeting(date = new Date()): string {
+  const h = date.getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 18) return 'Good afternoon';
+  return 'Good evening';
+}
 
 export function DashboardPage() {
   const stats = useStats();
   const projects = useProjects();
+  const { user } = useAuth();
+  const { hash } = useLocation();
+
+  useEffect(() => {
+    if (hash === '#projects') document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth' });
+  }, [hash]);
 
   const cards = stats.data
     ? [
-        ['Projects', stats.data.projects],
-        ['Total tasks', stats.data.totalTasks],
-        ['Pending tasks', stats.data.pendingTasks],
-        ['Completed tasks', stats.data.completedTasks],
+        { label: 'Projects', value: stats.data.projects, Icon: FolderKanban },
+        { label: 'Total tasks', value: stats.data.totalTasks, Icon: ListTodo },
+        { label: 'Pending tasks', value: stats.data.pendingTasks, Icon: Clock },
+        { label: 'Completed tasks', value: stats.data.completedTasks, Icon: CheckCircle2 },
       ]
     : [];
 
   return (
     <>
       <div className="row-between">
-        <h1 style={{ margin: 0 }}>Dashboard</h1>
+        <div>
+          <h1 className="page-title">
+            {greeting()}, {user?.name}
+          </h1>
+          <p className="muted" style={{ margin: '0.35rem 0 0' }}>
+            Here is what is happening across your projects.
+          </p>
+        </div>
         <Link to="/projects/new" className="btn btn-primary">
+          <Plus size={18} aria-hidden="true" />
           New project
         </Link>
       </div>
 
-      <section aria-label="Statistics">
-        {stats.isPending && <Loading label="Loading stats" />}
+      <section aria-label="Statistics" className={styles.statsSection}>
+        {stats.isPending && <Loading label="Loading stats" variant="stats" />}
         {stats.isError && <ErrorState message={errorMessage(stats.error)} onRetry={() => void stats.refetch()} />}
         {stats.data && (
-          <div className="stats">
-            {cards.map(([label, value]) => (
-              <div className="card" key={label}>
-                <div className="muted">{label}</div>
-                <div className="stat-value" data-testid={`stat-${label}`}>
-                  {value}
+          <div className={styles.stats}>
+            {cards.map(({ label, value, Icon }) => (
+              <div className={`card ${styles.stat}`} key={label}>
+                <span className={styles.statIcon}>
+                  <Icon size={22} aria-hidden="true" />
+                </span>
+                <div>
+                  <div className={styles.statValue} data-testid={`stat-${label}`}>
+                    {value}
+                  </div>
+                  <div className="muted small">{label}</div>
                 </div>
               </div>
             ))}
@@ -42,30 +73,42 @@ export function DashboardPage() {
         )}
       </section>
 
-      <section aria-label="Projects">
+      <section aria-label="Projects" id="projects" className={styles.projects}>
         <h2>Your projects</h2>
-        {projects.isPending && <Loading label="Loading projects" />}
+        {projects.isPending && <Loading label="Loading projects" variant="cards" />}
         {projects.isError && (
           <ErrorState message={errorMessage(projects.error)} onRetry={() => void projects.refetch()} />
         )}
         {projects.data?.length === 0 && (
-          <EmptyState title="No projects yet">
-            <Link to="/projects/new">Create your first project</Link> to start tracking tasks.
+          <EmptyState
+            title="No projects yet"
+            action={
+              <Link to="/projects/new" className="btn btn-primary">
+                <Plus size={18} aria-hidden="true" />
+                Create your first project
+              </Link>
+            }
+          >
+            Create a project to start tracking tasks.
           </EmptyState>
         )}
         {!!projects.data?.length && (
-          <ul className="project-list">
+          <ul className={styles.grid}>
             {projects.data.map((p) => (
-              <li key={p.id} className="card project-item">
-                <div>
-                  <Link to={`/projects/${p.id}`}>{p.name}</Link>
-                  {p.description && <div className="muted small">{p.description}</div>}
+              <li key={p.id} className={`card ${styles.project}`}>
+                <div className={styles.projectHead}>
+                  <Link to={`/projects/${p.id}`} className={styles.projectName}>
+                    {p.name}
+                  </Link>
+                  <Badge value={p.status} />
                 </div>
-                <div className="row">
-                  <span className={`badge badge-${p.status}`}>{p.status}</span>
-                  <span className="muted small">
+                <p className={`muted small ${styles.desc}`}>{p.description || 'No description'}</p>
+                <div className={styles.meta}>
+                  <span className={styles.metaItem}>
+                    <ListChecks size={14} aria-hidden="true" />
                     {p.taskCount ?? 0} task{p.taskCount === 1 ? '' : 's'}
                   </span>
+                  <span>{new Date(p.createdAt).toLocaleDateString()}</span>
                 </div>
               </li>
             ))}

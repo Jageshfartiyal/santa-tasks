@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router';
 import { errorMessage, fieldErrors } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { registerSchema, type RegisterValues } from '../auth/schemas';
+import { AuthLayout } from '../components/AuthLayout';
 import { Field } from '../components/Field';
 
 export function RegisterPage() {
@@ -39,8 +40,8 @@ export function RegisterPage() {
   });
 
   return (
-    <div className="auth-page">
-      <form className="card auth-card" onSubmit={onSubmit} noValidate aria-label="Create account">
+    <AuthLayout>
+      <form onSubmit={onSubmit} noValidate aria-label="Create account">
         <h1>Create account</h1>
         {serverError && (
           <div className="banner banner-error" role="alert">
@@ -70,6 +71,6 @@ export function RegisterPage() {
           Already registered? <Link to="/login">Log in</Link>
         </p>
       </form>
-    </div>
+    </AuthLayout>
   );
 }

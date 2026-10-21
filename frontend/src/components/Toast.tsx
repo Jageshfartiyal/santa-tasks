@@ -1,3 +1,4 @@
+import { CheckCircle2, XCircle } from 'lucide-react';
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 
 type Kind = 'success' | 'error';
@@ -34,7 +35,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       <div className="toasts" aria-live="polite">
         {items.map((t) => (
           <div key={t.id} className={`toast toast-${t.kind}`} role={t.kind === 'error' ? 'alert' : 'status'}>
-            {t.message}
+            {t.kind === 'success' ? <CheckCircle2 size={18} aria-hidden="true" /> : <XCircle size={18} aria-hidden="true" />}
+            <span>{t.message}</span>
           </div>
         ))}
       </div>

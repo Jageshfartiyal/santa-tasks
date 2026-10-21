@@ -55,8 +55,11 @@ function ProjectForm({ project }: { project?: Project }) {
   });
 
   return (
-    <form className="card" onSubmit={onSubmit} noValidate style={{ maxWidth: 600 }} aria-label="Project form">
+    <form className="card" onSubmit={onSubmit} noValidate style={{ maxWidth: 640 }} aria-label="Project form">
       <h1>{project ? 'Edit project' : 'New project'}</h1>
+      <p className="muted">
+        {project ? 'Update the details of this project.' : 'Give your project a name and get started tracking tasks.'}
+      </p>
       {serverError && (
         <div className="banner banner-error" role="alert">
           {serverError}
@@ -89,7 +92,7 @@ function ProjectForm({ project }: { project?: Project }) {
 
 function EditProject({ id }: { id: string }) {
   const q = useProject(id);
-  if (q.isPending) return <Loading label="Loading project" />;
+  if (q.isPending) return <Loading label="Loading project" variant="cards" />;
   if (q.isError) return <ErrorState message={errorMessage(q.error)} onRetry={() => void q.refetch()} />;
   return <ProjectForm project={q.data} />;
 }

@@ -5,6 +5,7 @@ import { Link, useLocation, useNavigate } from 'react-router';
 import { errorMessage } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { loginSchema, type LoginValues } from '../auth/schemas';
+import { AuthLayout } from '../components/AuthLayout';
 import { Field } from '../components/Field';
 
 export function LoginPage() {
@@ -29,8 +30,8 @@ export function LoginPage() {
   });
 
   return (
-    <div className="auth-page">
-      <form className="card auth-card" onSubmit={onSubmit} noValidate aria-label="Log in">
+    <AuthLayout>
+      <form onSubmit={onSubmit} noValidate aria-label="Log in">
         <h1>Log in</h1>
         {serverError && (
           <div className="banner banner-error" role="alert">
@@ -56,6 +57,6 @@ export function LoginPage() {
           No account? <Link to="/register">Create one</Link>
         </p>
       </form>
-    </div>
+    </AuthLayout>
   );
 }

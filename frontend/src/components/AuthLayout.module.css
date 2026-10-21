@@ -1,0 +1,140 @@
+.page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.brandPanel {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  padding: 2rem 1.25rem 1.5rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+}
+
+.blobA {
+  width: 360px;
+  height: 360px;
+  top: -120px;
+  left: -100px;
+  background: var(--blob-a);
+}
+
+.blobB {
+  width: 320px;
+  height: 320px;
+  bottom: -140px;
+  right: -80px;
+  background: var(--blob-b);
+}
+
+.brandInner {
+  position: relative;
+  max-width: 460px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 1.15rem;
+  margin-bottom: 1.25rem;
+}
+
+.logo {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-control);
+  background-image: var(--gradient-primary);
+  color: var(--on-accent);
+  box-shadow: var(--glow);
+}
+
+.tagline {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.1;
+  margin: 0 0 1rem;
+}
+
+.points {
+  display: none;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  gap: 0.85rem;
+}
+
+.points li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--muted);
+}
+
+.pointIcon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-control);
+  background: var(--accent-soft);
+  color: var(--danger-text);
+}
+
+.formSide {
+  display: grid;
+  place-items: center;
+  padding: 1.5rem 1rem 2.5rem;
+}
+
+.card {
+  width: 100%;
+  max-width: 420px;
+  padding: 1.5rem;
+}
+
+.card :global(.btn-primary) {
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .points {
+    display: grid;
+  }
+  .card {
+    padding: 2rem;
+  }
+}
+
+@media (min-width: 900px) {
+  .page {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  }
+  .brandPanel {
+    padding: 3rem;
+    border-bottom: 0;
+    border-right: 1px solid var(--border);
+  }
+  .tagline {
+    font-size: 2.6rem;
+    margin-bottom: 1.75rem;
+  }
+  .formSide {
+    padding: 2rem;
+  }
+}
