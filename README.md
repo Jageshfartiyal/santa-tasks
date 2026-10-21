@@ -2,6 +2,8 @@
 
 A full-stack app where users register, log in, and manage their own projects and the tasks inside them, with filtering, sorting, pagination and a dashboard of counts.
 
+**Live demo:** https://santa-tasks.vercel.app (log in with `demo@santa.dev` / `Demo1234`). API docs: https://santa-tasks-api.onrender.com/docs. The free API host sleeps when idle, so the first request can take up to a minute.
+
 > **Frontend framework note.** The assignment brief lists Angular, while the Full-Stack Engineer job description asks for React ("Experience building and maintaining production React applications" is a required skill). I built the frontend in **React 19** to match the role. The backend, API, database and features follow the assignment exactly, and every Angular expectation has a React equivalent:
 >
 > | Assignment (Angular) | This project (React) |
@@ -113,8 +115,9 @@ The backend suite uses the `santa_test` database (created by the compose init sc
 
 ## Deployment
 
-- Frontend: `https://<your-frontend-url>`
-- API: `https://<your-api-url>` (Swagger at `/docs`)
+- Frontend: https://santa-tasks.vercel.app
+- API: https://santa-tasks-api.onrender.com (Swagger UI at [`/docs`](https://santa-tasks-api.onrender.com/docs), health at [`/api/health`](https://santa-tasks-api.onrender.com/api/health))
+- Database: Neon Postgres (AWS us-east-2)
 - Demo login: `demo@santa.dev` / `Demo1234`
 
 Free-tier layout: **Neon** (Postgres) + **Render** (API, Docker) + **Vercel** (frontend). Vercel rewrites `/api/*` to the Render service, so the browser talks to one origin and the refresh cookie stays first-party (no third-party-cookie blocking in Safari or incognito).
