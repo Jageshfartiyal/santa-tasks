@@ -36,3 +36,18 @@ describe('QA regression: malformed input must yield 400, never 500', () => {
     expect((await request(app).get('/api/projects?q=%00').set(u.auth)).status).toBe(400);
   });
 });
+
+describe('QA regression: LIKE wildcards are matched literally', () => {
+  it('q=% and q=_ do not match every row', async () => {
+    const u = await registerUser();
+    const p = await createProject(u.auth, { name: 'Plain' });
+    await request(app).post(`/api/projects/${p.id}/tasks`).set(u.auth).send({ title: 'abc' });
+    await request(app).post(`/api/projects/${p.id}/tasks`).set(u.auth).send({ title: '100% done' });
+    for (const q of ['%', '_', '\']) {
+      const tasks = await request(app).get(`/api/projects/${p.id}/tasks`).query({ q }).set(u.auth);
+      expect(tasks.body.meta.total, q).toBe(q === '%' ? 1 : 0);
+      const projects = await request(app).get('/api/projects').query({ q }).set(u.auth);
+      expect(projects.body.data, q).toHaveLength(0);
+    }
+  });
+});

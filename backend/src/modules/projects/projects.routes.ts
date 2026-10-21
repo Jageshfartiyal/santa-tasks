@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { notFound } from '../../lib/errors';
 import { parseId } from '../../lib/ids';
 import { prisma } from '../../lib/prisma';
+import { escapeLike } from '../../lib/text';
 import { uid } from '../../middleware/auth';
 import { tasksByProjectRouter } from '../tasks/tasks.routes';
 import { createProjectSchema, listProjectsQuery, updateProjectSchema } from './projects.schemas';
@@ -11,7 +12,7 @@ export const projectsRouter = Router();
 projectsRouter.get('/', async (req, res) => {
   const { status, q } = listProjectsQuery.parse(req.query);
   const rows = await prisma.project.findMany({
-    where: { userId: uid(req), status, name: q ? { contains: q, mode: 'insensitive' } : undefined },
+    where: { userId: uid(req), status, name: q ? { contains: escapeLike(q), mode: 'insensitive' } : undefined },
     orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
     include: { _count: { select: { tasks: true } } },
   });

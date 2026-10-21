@@ -126,3 +126,6 @@ Steps:
 - Refresh-token reuse revokes all of that user's sessions (deliberate, but can log out other devices).
 - Expired/revoked refresh tokens are not purged automatically.
 - No end-to-end browser tests; frontend tests mock the API.
+- Two browser tabs refreshing at the same moment can trip refresh-token reuse detection and log the user out.
+- "Overdue" is computed against the UTC date, not the user's local date.
+- `requireAuth` only verifies the JWT; it does not re-check that the user still exists (a deleted user's token works until it expires).

@@ -3,6 +3,7 @@ import type { Prisma, Task } from '@prisma/client';
 import { notFound } from '../../lib/errors';
 import { parseId } from '../../lib/ids';
 import { prisma } from '../../lib/prisma';
+import { escapeLike } from '../../lib/text';
 import { uid } from '../../middleware/auth';
 import { PRIORITY_RANK, createTaskSchema, listTasksQuery, toDate, updateTaskSchema } from './tasks.schemas';
 
@@ -33,7 +34,7 @@ tasksByProjectRouter.get('/', async (req, res) => {
 
   const where: Prisma.TaskWhereInput = {
     projectId,
-    title: p.q ? { contains: p.q, mode: 'insensitive' } : undefined,
+    title: p.q ? { contains: escapeLike(p.q), mode: 'insensitive' } : undefined,
     status: p.status,
     priority: p.priority,
     dueDate: Object.keys(due).length ? due : undefined,
