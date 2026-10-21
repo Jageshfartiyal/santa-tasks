@@ -44,7 +44,7 @@ export function authRouter(opts: { rateLimitMax?: number } = {}) {
     res.json({ user: s.user, accessToken: s.accessToken });
   });
 
-  router.post('/refresh', limiter, async (req, res) => {
+  router.post('/refresh', async (req, res) => {
     try {
       const s = await service.refresh(req.cookies?.[REFRESH_COOKIE]);
       setRefreshCookie(res, s.refreshToken);
