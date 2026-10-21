@@ -1,0 +1,387 @@
+openapi: 3.0.3
+info:
+  title: Task & Project Management API
+  version: 1.0.0
+  description: |
+    JWT-secured REST API. Obtain an access token from `/api/auth/login`, then click Authorize and paste it.
+    Refresh tokens live in an httpOnly cookie (`refresh_token`, path `/api/auth`) and rotate on every use.
+    Accessing another user's resource returns 404.
+servers:
+  - url: /
+tags:
+  - name: Auth
+  - name: Projects
+  - name: Tasks
+  - name: Stats
+  - name: System
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string, example: VALIDATION_ERROR }
+            message: { type: string }
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field: { type: string }
+                  message: { type: string }
+    User:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        name: { type: string }
+        createdAt: { type: string, format: date-time }
+    Session:
+      type: object
+      properties:
+        user: { $ref: '#/components/schemas/User' }
+        accessToken: { type: string }
+    ProjectStatus:
+      type: string
+      enum: [ACTIVE, COMPLETED, ARCHIVED]
+    Project:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, maxLength: 100 }
+        description: { type: string, maxLength: 1000 }
+        status: { $ref: '#/components/schemas/ProjectStatus' }
+        taskCount: { type: integer, description: Only on list responses }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    ProjectInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+        description: { type: string, maxLength: 1000 }
+        status: { $ref: '#/components/schemas/ProjectStatus' }
+    TaskStatus:
+      type: string
+      enum: [TODO, IN_PROGRESS, DONE]
+    Priority:
+      type: string
+      enum: [LOW, MEDIUM, HIGH]
+    Task:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        title: { type: string }
+        description: { type: string }
+        status: { $ref: '#/components/schemas/TaskStatus' }
+        priority: { $ref: '#/components/schemas/Priority' }
+        dueDate: { type: string, format: date, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    TaskInput:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 200 }
+        description: { type: string, maxLength: 5000 }
+        status: { $ref: '#/components/schemas/TaskStatus' }
+        priority: { $ref: '#/components/schemas/Priority' }
+        dueDate: { type: string, format: date, nullable: true }
+    PageMeta:
+      type: object
+      properties:
+        page: { type: integer }
+        limit: { type: integer }
+        total: { type: integer }
+        totalPages: { type: integer }
+    Stats:
+      type: object
+      properties:
+        projects: { type: integer }
+        totalTasks: { type: integer }
+        pendingTasks: { type: integer }
+        completedTasks: { type: integer }
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  responses:
+    Unauthorized:
+      description: Missing, invalid or expired token
+      content:
+        application/json: { schema: { $ref: '#/components/schemas/Error' } }
+    NotFound:
+      description: Not found (also returned for resources owned by someone else)
+      content:
+        application/json: { schema: { $ref: '#/components/schemas/Error' } }
+    Invalid:
+      description: Validation error
+      content:
+        application/json: { schema: { $ref: '#/components/schemas/Error' } }
+paths:
+  /api/health:
+    get:
+      tags: [System]
+      summary: Liveness and database check
+      responses:
+        '200': { description: OK }
+        '503': { description: Database unavailable }
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: Create an account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, name, password]
+              properties:
+                email: { type: string, format: email }
+                name: { type: string }
+                password: { type: string, minLength: 8, description: At least one letter and one digit }
+      responses:
+        '201':
+          description: Created; sets refresh cookie
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Session' } }
+        '400': { $ref: '#/components/responses/Invalid' }
+        '409': { description: Email already registered }
+        '429': { description: Rate limited }
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200':
+          description: OK; sets refresh cookie
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Session' } }
+        '400': { $ref: '#/components/responses/Invalid' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { description: Rate limited }
+  /api/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Rotate the refresh cookie and get a new access token
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Session' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Revoke the refresh token and clear the cookie
+      responses:
+        '204': { description: Logged out }
+  /api/auth/me:
+    get:
+      tags: [Auth]
+      summary: Current user
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/projects:
+    get:
+      tags: [Projects]
+      summary: List my projects
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/ProjectStatus' } }
+        - { name: q, in: query, description: Name search (case-insensitive), schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Project' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Projects]
+      summary: Create a project
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/ProjectInput' } }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Project' } }
+        '400': { $ref: '#/components/responses/Invalid' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/projects/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Projects]
+      summary: Get a project
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Project' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Projects]
+      summary: Update a project (any subset of fields)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/ProjectInput' } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Project' } }
+        '400': { $ref: '#/components/responses/Invalid' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Projects]
+      summary: Delete a project and all its tasks
+      security: [{ bearerAuth: [] }]
+      responses:
+        '204': { description: Deleted }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/projects/{id}/tasks:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Tasks]
+      summary: List tasks of a project (filter, sort, paginate)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: q, in: query, description: Title search (ILIKE), schema: { type: string } }
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/TaskStatus' } }
+        - { name: priority, in: query, schema: { $ref: '#/components/schemas/Priority' } }
+        - { name: dueFrom, in: query, description: Inclusive, schema: { type: string, format: date } }
+        - { name: dueTo, in: query, description: Inclusive, schema: { type: string, format: date } }
+        - { name: overdue, in: query, description: Past due and not DONE, schema: { type: boolean } }
+        - { name: sortBy, in: query, schema: { type: string, enum: [createdAt, dueDate, priority], default: createdAt } }
+        - { name: order, in: query, schema: { type: string, enum: [asc, desc], default: desc } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 10 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Task' }
+                  meta: { $ref: '#/components/schemas/PageMeta' }
+        '400': { $ref: '#/components/responses/Invalid' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [Tasks]
+      summary: Create a task
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/TaskInput' } }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Task' } }
+        '400': { $ref: '#/components/responses/Invalid' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/tasks/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Tasks]
+      summary: Get a task
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Task' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Tasks]
+      summary: Update a task (any subset of fields)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/TaskInput' } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Task' } }
+        '400': { $ref: '#/components/responses/Invalid' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Tasks]
+      summary: Delete a task
+      security: [{ bearerAuth: [] }]
+      responses:
+        '204': { description: Deleted }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/stats:
+    get:
+      tags: [Stats]
+      summary: Dashboard counts for the current user
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Stats' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
