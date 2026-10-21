@@ -1,5 +1,5 @@
 import { AlertCircle, CalendarDays, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { errorMessage } from '../api/client';
 import type { Priority, Task, TaskInput, TaskQuery, TaskStatus } from '../api/types';
@@ -56,6 +56,7 @@ export function TaskList({ projectId }: { projectId: string }) {
   const [editing, setEditing] = useState<Task | 'new' | null>(null);
   const [deleting, setDeleting] = useState<Task | null>(null);
   const [search, setSearch] = useState(query.q ?? '');
+  const pushedQ = useRef(query.q);
 
   const setParam = (changes: Record<string, string | undefined>, resetPage = true) => {
     setSp(
@@ -72,10 +73,20 @@ export function TaskList({ projectId }: { projectId: string }) {
     );
   };
 
+  // Resync the input when the URL changes externally (back button, nav), not for our own pushes.
+  useEffect(() => {
+    if (query.q === pushedQ.current) return;
+    pushedQ.current = query.q;
+    setSearch(query.q ?? '');
+  }, [query.q]);
+
   // Debounce the search box into the URL.
   useEffect(() => {
     if (search === (query.q ?? '')) return;
-    const t = setTimeout(() => setParam({ q: search.trim() || undefined }), 300);
+    const t = setTimeout(() => {
+      pushedQ.current = search.trim() || undefined;
+      setParam({ q: pushedQ.current });
+    }, 300);
     return () => clearTimeout(t);
 
   }, [search]);

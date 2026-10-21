@@ -1,5 +1,5 @@
 import { Plus, Search } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { errorMessage } from '../api/client';
 import type { ProjectQuery, ProjectStatus } from '../api/types';
@@ -20,6 +20,7 @@ export function ProjectsPage() {
   const projects = useProjects(query);
   const [search, setSearch] = useState(q ?? '');
   const hasFilters = !!(q || status);
+  const pushedQ = useRef(q);
 
   const setParam = (changes: Record<string, string | undefined>) =>
     setSp(
@@ -34,10 +35,20 @@ export function ProjectsPage() {
       { replace: true },
     );
 
+  // Resync the input when the URL changes externally (back button, nav link), not for our own pushes.
+  useEffect(() => {
+    if (q === pushedQ.current) return;
+    pushedQ.current = q;
+    setSearch(q ?? '');
+  }, [q]);
+
   // Debounce the search box into the URL.
   useEffect(() => {
     if (search.trim() === (q ?? '')) return;
-    const t = setTimeout(() => setParam({ q: search.trim() || undefined }), 300);
+    const t = setTimeout(() => {
+      pushedQ.current = search.trim() || undefined;
+      setParam({ q: pushedQ.current });
+    }, 300);
     return () => clearTimeout(t);
   }, [search]);
 

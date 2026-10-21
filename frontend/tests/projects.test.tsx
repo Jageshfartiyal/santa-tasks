@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router';
+import { Link, MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProjectsPage } from '../src/pages/ProjectsPage';
 
@@ -37,5 +37,21 @@ describe('ProjectsPage', () => {
     await waitFor(() =>
       expect(api.listProjects).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'ARCHIVED' })),
     );
+  });
+
+  it('resyncs the search input when the URL q changes externally', async () => {
+    api.listProjects.mockResolvedValue([project]);
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={['/projects?q=alp']}>
+          <Link to="/projects">All</Link>
+          <ProjectsPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    expect(screen.getByLabelText('Search projects')).toHaveValue('alp');
+    await userEvent.click(screen.getByRole('link', { name: 'All' }));
+    await waitFor(() => expect(screen.getByLabelText('Search projects')).toHaveValue(''));
   });
 });
