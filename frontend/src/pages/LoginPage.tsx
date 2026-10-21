@@ -6,6 +6,7 @@ import { errorMessage } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { loginSchema, type LoginValues } from '../auth/schemas';
 import { AuthLayout } from '../components/AuthLayout';
+import { DemoAccountCard } from '../components/DemoAccountCard';
 import { Field } from '../components/Field';
 
 export function LoginPage() {
@@ -16,6 +17,7 @@ export function LoginPage() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LoginValues>({ resolver: zodResolver(loginSchema), defaultValues: { email: '', password: '' } });
 
@@ -57,6 +59,12 @@ export function LoginPage() {
           No account? <Link to="/register">Create one</Link>
         </p>
       </form>
+      <DemoAccountCard
+        onUse={(email, password) => {
+          setValue('email', email, { shouldValidate: true, shouldDirty: true });
+          setValue('password', password, { shouldValidate: true, shouldDirty: true });
+        }}
+      />
     </AuthLayout>
   );
 }

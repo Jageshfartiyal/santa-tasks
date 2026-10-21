@@ -82,6 +82,21 @@ describe('LoginPage', () => {
     expect(auth.value.login).not.toHaveBeenCalled();
   });
 
+  it('fills both fields from the demo account card without submitting', async () => {
+    renderLogin();
+    await userEvent.click(screen.getByRole('button', { name: 'Use demo account' }));
+    expect(screen.getByLabelText('Email')).toHaveValue('demo@santa.dev');
+    expect(screen.getByLabelText('Password')).toHaveValue('Demo1234');
+    expect(screen.getByRole('button', { name: 'Copy demo email' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Copy demo password' })).toBeInTheDocument();
+    expect(auth.value.login).not.toHaveBeenCalled();
+    auth.value.login.mockResolvedValue(undefined);
+    await userEvent.click(screen.getByRole('button', { name: 'Log in' }));
+    await waitFor(() =>
+      expect(auth.value.login).toHaveBeenCalledWith({ email: 'demo@santa.dev', password: 'Demo1234' }),
+    );
+  });
+
   it('submits valid data and navigates to the dashboard', async () => {
     auth.value.login.mockResolvedValue(undefined);
     renderLogin();

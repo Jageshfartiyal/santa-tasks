@@ -70,6 +70,9 @@ export function RegisterPage() {
         <p className="muted">
           Already registered? <Link to="/login">Log in</Link>
         </p>
+        <p className="muted small">
+          Just exploring? <Link to="/login">Use the demo account</Link>
+        </p>
       </form>
     </AuthLayout>
   );

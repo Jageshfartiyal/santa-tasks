@@ -39,7 +39,7 @@ npm run seed                            # demo user + sample data
 npm run dev                             # API http://localhost:4000, web http://localhost:5173
 ```
 
-Demo login: `demo@santa.dev` / `Demo1234`.
+Demo login: `demo@santa.dev` / `Demo1234` (shown on the login page; override or hide via `VITE_DEMO_EMAIL` / `VITE_DEMO_PASSWORD`, see `frontend/.env.example`).
 
 Other scripts (from the repo root): `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`.
 
