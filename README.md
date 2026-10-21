@@ -60,6 +60,7 @@ Docker Postgres is mapped to host port **5433** to avoid clashing with a locally
 | `COOKIE_CROSS_SITE` | `false` | `true` makes the refresh cookie `SameSite=None; Secure` (frontend and API on different sites) |
 | `AUTH_RATE_LIMIT_MAX` | `20` | Auth requests per IP per 15 minutes |
 | `PORT`, `NODE_ENV`, `LOG_LEVEL` | `4000`, `development`, `info` | Runtime |
+| `SEED_DEMO` | unset | Docker image only: `true` seeds the demo account and sample data on start |
 
 `frontend/.env`: `VITE_API_URL` is the API base URL. Leave it empty in development (Vite proxies `/api` to `localhost:4000`).
 
@@ -107,12 +108,13 @@ Deploy-ready but not deployed. Placeholders:
 
 Steps:
 1. Provision Postgres; set `DATABASE_URL`, a strong `JWT_SECRET`, `FRONTEND_ORIGIN=https://<your-frontend-url>`, and `COOKIE_CROSS_SITE=true` if the two apps are on different sites.
-2. API image (from the repo root): `docker build -f backend/Dockerfile -t santa-api .`. The container runs `prisma migrate deploy` on start. Behind a proxy it trusts one hop for client IPs.
+2. API image (from the repo root): `docker build -f backend/Dockerfile -t santa-api .`. On start the container runs `prisma migrate deploy`, then seeds the demo account if `SEED_DEMO=true` (idempotent, safe on every restart), then starts the API. Behind a proxy it trusts one hop for client IPs.
+   - Without Docker: `npm ci && npm run build -w backend && npm run build:seed -w backend`, then `npm run migrate -w backend && npm run seed:prod -w backend && npm start -w backend`.
 3. Web image: `docker build -f frontend/Dockerfile --build-arg VITE_API_URL=https://<your-api-url> -t santa-web .` (nginx with SPA fallback). Or deploy `frontend/dist` to any static host.
 
 ## Assumptions
 
-- The frontend is React (the spec's framework choice was open).
+- The assignment lists Angular for the frontend, but the Full-Stack Engineer job description specifies React ("Experience building and maintaining production React applications" is a required skill), so the frontend uses React 19. The backend, API, database and feature set follow the assignment.
 - `dueDate` is date-only; `dueFrom` / `dueTo` are inclusive; "overdue" means due before today (UTC) and not Done.
 - Password: 8-72 characters with at least one letter and one digit.
 - PUT endpoints accept any subset of fields (partial update).
