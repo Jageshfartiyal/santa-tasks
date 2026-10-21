@@ -50,6 +50,8 @@ export function ProjectsPage() {
       setParam({ q: pushedQ.current });
     }, 300);
     return () => clearTimeout(t);
+    // Only the typed text should restart the debounce; q and setParam change on every navigation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
   return (

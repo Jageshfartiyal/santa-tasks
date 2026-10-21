@@ -10,12 +10,18 @@ const schema = z.object({
   JWT_SECRET: z.string().min(16, 'JWT_SECRET is required (min 16 chars)'),
   ACCESS_TOKEN_TTL: z.string().default('15m'),
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(7),
-  FRONTEND_ORIGIN: z.string().url().default('http://localhost:5173'),
+  FRONTEND_ORIGIN: z
+    .string()
+    .url()
+    .default('http://localhost:5173')
+    .transform((v) => v.replace(/\/+$/, '')),
   COOKIE_CROSS_SITE: z
     .enum(['true', 'false'])
     .default('false')
     .transform((v) => v === 'true'),
   AUTH_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(20),
+  // Proxy hops in front of the API in production (e.g. 2 for Vercel rewrite -> Render); used for client IPs
+  TRUST_PROXY: z.coerce.number().int().min(0).default(1),
   LOG_LEVEL: z.string().default('info'),
 });
 

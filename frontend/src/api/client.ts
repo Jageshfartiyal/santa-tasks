@@ -1,7 +1,7 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import type { Session } from './types';
 
-const baseURL = `${import.meta.env.VITE_API_URL ?? ''}/api`;
+const baseURL = `${(import.meta.env.VITE_API_URL ?? '').replace(/\/+$/, '')}/api`;
 
 // The access token lives in memory only; the refresh token is an httpOnly cookie the browser manages.
 let accessToken: string | null = null;

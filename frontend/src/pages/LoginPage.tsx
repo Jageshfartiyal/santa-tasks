@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { Link, useLocation, useNavigate } from 'react-router';
@@ -20,6 +20,15 @@ export function LoginPage() {
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<LoginValues>({ resolver: zodResolver(loginSchema), defaultValues: { email: '', password: '' } });
+
+  // The free API host sleeps when idle; explain a slow first login instead of leaving the button spinning.
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    setSlow(false);
+    if (!isSubmitting) return;
+    const t = setTimeout(() => setSlow(true), 4000);
+    return () => clearTimeout(t);
+  }, [isSubmitting]);
 
   const onSubmit = handleSubmit(async (values) => {
     setServerError(null);
@@ -55,6 +64,11 @@ export function LoginPage() {
         <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
           {isSubmitting ? 'Logging in…' : 'Log in'}
         </button>
+        {slow && (
+          <p className="muted small" role="status">
+            Waking up the server. The first request can take up to a minute.
+          </p>
+        )}
         <p className="muted">
           No account? <Link to="/register">Create one</Link>
         </p>

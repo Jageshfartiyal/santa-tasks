@@ -7,18 +7,20 @@ import * as service from './auth.service';
 
 export const REFRESH_COOKIE = 'refresh_token';
 
+// Clearing must repeat the attributes used to set the cookie, or browsers ignore it (SameSite=None needs Secure).
+const cookieOptions = () => ({
+  httpOnly: true,
+  secure: env.COOKIE_CROSS_SITE || env.NODE_ENV === 'production',
+  sameSite: env.COOKIE_CROSS_SITE ? ('none' as const) : ('lax' as const),
+  path: '/api/auth',
+});
+
 function setRefreshCookie(res: Response, token: string) {
-  res.cookie(REFRESH_COOKIE, token, {
-    httpOnly: true,
-    secure: env.COOKIE_CROSS_SITE || env.NODE_ENV === 'production',
-    sameSite: env.COOKIE_CROSS_SITE ? 'none' : 'lax',
-    path: '/api/auth',
-    maxAge: env.REFRESH_TOKEN_TTL_DAYS * 86_400_000,
-  });
+  res.cookie(REFRESH_COOKIE, token, { ...cookieOptions(), maxAge: env.REFRESH_TOKEN_TTL_DAYS * 86_400_000 });
 }
 
 function clearRefreshCookie(res: Response) {
-  res.clearCookie(REFRESH_COOKIE, { path: '/api/auth' });
+  res.clearCookie(REFRESH_COOKIE, cookieOptions());
 }
 
 export function authRouter(opts: { rateLimitMax?: number } = {}) {

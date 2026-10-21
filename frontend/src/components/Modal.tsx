@@ -19,6 +19,7 @@ export function Modal({ title, onClose, children }: ModalProps) {
 
   useEffect(() => {
     const dialog = dialogRef.current;
+    const returnFocusTo = opener.current;
     if (dialog && !dialog.contains(document.activeElement)) dialog.focus();
 
     const onKey = (e: KeyboardEvent) => {
@@ -48,7 +49,7 @@ export function Modal({ title, onClose, children }: ModalProps) {
     return () => {
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = overflow;
-      opener.current?.focus?.();
+      returnFocusTo?.focus?.();
     };
   }, []);
 

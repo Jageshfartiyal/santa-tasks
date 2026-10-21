@@ -1,0 +1,26 @@
+# Render Blueprint: the API as a Docker web service. The database is external (Neon); paste its URL when prompted.
+services:
+  - type: web
+    name: santa-tasks-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: SEED_DEMO
+        value: "true"
+      # Browser -> Vercel rewrite -> Render proxy -> API
+      - key: TRUST_PROXY
+        value: "2"
+      # Vercel proxies /api, so the refresh cookie is first-party
+      - key: COOKIE_CROSS_SITE
+        value: "false"

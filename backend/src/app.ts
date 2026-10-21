@@ -19,7 +19,7 @@ import { tasksRouter } from './modules/tasks/tasks.routes';
 
 export function createApp(opts: { authRateLimitMax?: number } = {}) {
   const app = express();
-  if (env.NODE_ENV === 'production') app.set('trust proxy', 1);
+  if (env.NODE_ENV === 'production') app.set('trust proxy', env.TRUST_PROXY);
   app.disable('x-powered-by');
 
   // Swagger UI needs inline scripts, so it gets its own helmet config without CSP.

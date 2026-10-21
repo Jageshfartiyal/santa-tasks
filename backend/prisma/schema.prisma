@@ -72,7 +72,7 @@ model Task {
   description  String     @default("")
   status       TaskStatus @default(TODO)
   priority     Priority   @default(MEDIUM)
-  // 1=LOW 2=MEDIUM 3=HIGH; kept in sync by the service so SQL can sort by rank, not alphabetically
+  // 1=LOW 2=MEDIUM 3=HIGH; kept in sync by the service. An explicit sort key keeps order independent of enum declaration order
   priorityRank Int        @default(2) @map("priority_rank") @db.SmallInt
   dueDate      DateTime?  @map("due_date") @db.Date
   createdAt    DateTime   @default(now()) @map("created_at")

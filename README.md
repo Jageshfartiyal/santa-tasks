@@ -2,6 +2,17 @@
 
 A full-stack app where users register, log in, and manage their own projects and the tasks inside them, with filtering, sorting, pagination and a dashboard of counts.
 
+> **Frontend framework note.** The assignment brief lists Angular, while the Full-Stack Engineer job description asks for React ("Experience building and maintaining production React applications" is a required skill). I built the frontend in **React 19** to match the role. The backend, API, database and features follow the assignment exactly, and every Angular expectation has a React equivalent:
+>
+> | Assignment (Angular) | This project (React) |
+> |---|---|
+> | Components | Function components (`frontend/src/components`, `pages`) |
+> | Services + HttpClient | `api/endpoints.ts` on an axios instance (`api/client.ts`) |
+> | HTTP interceptors | axios interceptors: bearer token, single-flight refresh on 401 |
+> | Routing + route guards | react-router 7 with `ProtectedRoute` / `PublicOnlyRoute` |
+> | Reactive Forms | react-hook-form + zod schemas, server field errors mapped back |
+> | RxJS / state management | TanStack Query (caching, refetch, cancellation, keep-previous-data) + auth Context |
+
 ## Overview
 
 - **Auth:** register / login with bcrypt-hashed passwords, 15-minute JWT access tokens, rotating refresh tokens in an httpOnly cookie.
@@ -21,7 +32,7 @@ React SPA (Vite)  --/api-->  Express 5 API  --Prisma-->  PostgreSQL
 - Monorepo with npm workspaces: `backend/` and `frontend/`.
 - Each API module holds its schemas (Zod) and routes; shared pieces live in `config/`, `middleware/` and `lib/`.
 - Ownership is enforced in every query via `project.userId`. Another user's resource returns **404**, so ids cannot be probed.
-- Filtering, sorting and pagination run in SQL (Prisma `where` / `orderBy` / `skip` / `take`). Priority sorts by a `priority_rank` smallint (LOW=1, MEDIUM=2, HIGH=3) so the order is not alphabetical.
+- Filtering, sorting and pagination run in SQL (Prisma `where` / `orderBy` / `skip` / `take`). Priority sorts by a `priority_rank` smallint (LOW=1, MEDIUM=2, HIGH=3). Postgres would also sort the enum by declaration order, but Postgres cannot reorder enum values later, so an explicit sort key keeps ordering under the app's control.
 - The access token is kept in memory on the client. On a 401 the axios interceptor performs one single-flight refresh and retries the request; if the refresh fails the user is logged out and sent to `/login`. On page load the app tries a silent refresh.
 - Task filters and page number live in URL query params, so views are shareable and survive reloads.
 
@@ -60,6 +71,7 @@ Docker Postgres is mapped to host port **5433** to avoid clashing with a locally
 | `COOKIE_CROSS_SITE` | `false` | `true` makes the refresh cookie `SameSite=None; Secure` (frontend and API on different sites) |
 | `AUTH_RATE_LIMIT_MAX` | `20` | Auth requests per IP per 15 minutes |
 | `PORT`, `NODE_ENV`, `LOG_LEVEL` | `4000`, `development`, `info` | Runtime |
+| `TRUST_PROXY` | `1` | Production only: proxy hops in front of the API, for client IPs (2 behind Vercel rewrite + Render) |
 | `SEED_DEMO` | unset | Docker image only: `true` seeds the demo account and sample data on start |
 
 `frontend/.env`: `VITE_API_URL` is the API base URL. Leave it empty in development (Vite proxies `/api` to `localhost:4000`).
@@ -101,20 +113,26 @@ The backend suite uses the `santa_test` database (created by the compose init sc
 
 ## Deployment
 
-Deploy-ready but not deployed. Placeholders:
-
 - Frontend: `https://<your-frontend-url>`
 - API: `https://<your-api-url>` (Swagger at `/docs`)
+- Demo login: `demo@santa.dev` / `Demo1234`
+
+Free-tier layout: **Neon** (Postgres) + **Render** (API, Docker) + **Vercel** (frontend). Vercel rewrites `/api/*` to the Render service, so the browser talks to one origin and the refresh cookie stays first-party (no third-party-cookie blocking in Safari or incognito).
+
+> The free Render instance sleeps after ~15 minutes idle; the first request after that takes 30-60 s while it wakes. The demo account's data is reseeded each time the API starts.
 
 Steps:
-1. Provision Postgres; set `DATABASE_URL`, a strong `JWT_SECRET`, `FRONTEND_ORIGIN=https://<your-frontend-url>`, and `COOKIE_CROSS_SITE=true` if the two apps are on different sites.
-2. API image (from the repo root): `docker build -f backend/Dockerfile -t santa-api .`. On start the container runs `prisma migrate deploy`, then seeds the demo account if `SEED_DEMO=true` (idempotent, safe on every restart), then starts the API. Behind a proxy it trusts one hop for client IPs.
-   - Without Docker: `npm ci && npm run build -w backend && npm run build:seed -w backend`, then `npm run migrate -w backend && npm run seed:prod -w backend && npm start -w backend`.
-3. Web image: `docker build -f frontend/Dockerfile --build-arg VITE_API_URL=https://<your-api-url> -t santa-web .` (nginx with SPA fallback). Or deploy `frontend/dist` to any static host.
+1. **Database (Neon):** create a project and copy the **direct** (non-pooled) connection string, with `?sslmode=require`.
+2. **API (Render):** New > Blueprint, pick this repo; `render.yaml` defines the service. Fill in `DATABASE_URL` and `FRONTEND_ORIGIN` (the Vercel URL). `JWT_SECRET` is generated. On start the container runs `prisma migrate deploy`, seeds the demo account (`SEED_DEMO=true`, idempotent), then starts the API.
+3. **Frontend (Vercel):** import the repo with the root directory left as the repo root; `vercel.json` sets the build, the SPA fallback and the `/api` rewrite. If the Render service URL differs from `https://santa-tasks-api.onrender.com`, update the rewrite destination.
+
+Other options:
+- API image (from the repo root): `docker build -f backend/Dockerfile -t santa-api .`. Web image: `docker build -f frontend/Dockerfile --build-arg VITE_API_URL=https://<your-api-url> -t santa-web .` (nginx with SPA fallback). If the frontend and API are on different sites, set `COOKIE_CROSS_SITE=true`.
+- Without Docker: `npm ci && npm run build -w backend && npm run build:seed -w backend`, then `npm run migrate -w backend && npm run seed:prod -w backend && npm start -w backend`.
 
 ## Assumptions
 
-- The assignment lists Angular for the frontend, but the Full-Stack Engineer job description specifies React ("Experience building and maintaining production React applications" is a required skill), so the frontend uses React 19. The backend, API, database and feature set follow the assignment.
+- Frontend is React rather than Angular, to match the job description (see the note at the top).
 - `dueDate` is date-only; `dueFrom` / `dueTo` are inclusive; "overdue" means due before today (UTC) and not Done.
 - Password: 8-72 characters with at least one letter and one digit.
 - PUT endpoints accept any subset of fields (partial update).

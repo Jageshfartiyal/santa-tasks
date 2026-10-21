@@ -88,8 +88,16 @@ export function TaskList({ projectId }: { projectId: string }) {
       setParam({ q: pushedQ.current });
     }, 300);
     return () => clearTimeout(t);
-
+    // Only the typed text should restart the debounce; query.q and setParam change on every navigation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
+
+  // A stale ?page= (or deleting the last task on the last page) lands past the end: step back to the last page.
+  const meta = tasks.data?.meta;
+  useEffect(() => {
+    if (meta && meta.total > 0 && meta.page > meta.totalPages) setParam({ page: String(meta.totalPages) }, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [meta]);
 
   const hasFilters = !!(query.q || query.status || query.priority || query.dueFrom || query.dueTo || query.overdue);
 
@@ -240,7 +248,7 @@ export function TaskList({ projectId }: { projectId: string }) {
 
       {tasks.isPending && <Loading label="Loading tasks" />}
       {tasks.isError && <ErrorState message={errorMessage(tasks.error)} onRetry={() => void tasks.refetch()} />}
-      {tasks.data && tasks.data.data.length === 0 && (
+      {tasks.data && tasks.data.meta.total === 0 && (
         <EmptyState
           title={hasFilters ? 'No tasks match your filters' : 'No tasks yet'}
           action={
