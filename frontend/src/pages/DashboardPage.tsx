@@ -1,9 +1,9 @@
-import { CheckCircle2, Clock, FolderKanban, ListChecks, ListTodo, Plus } from 'lucide-react';
+import { CheckCircle2, Clock, FolderKanban, ListTodo, Plus } from 'lucide-react';
 import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router';
 import { errorMessage } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
-import { Badge } from '../components/Badge';
+import { ProjectGrid } from '../components/ProjectGrid';
 import { EmptyState, ErrorState, Loading } from '../components/States';
 import { useProjects, useStats } from '../hooks/queries';
 import styles from './DashboardPage.module.css';
@@ -93,26 +93,7 @@ export function DashboardPage() {
           </EmptyState>
         )}
         {!!projects.data?.length && (
-          <ul className={styles.grid}>
-            {projects.data.map((p) => (
-              <li key={p.id} className={`card ${styles.project}`}>
-                <div className={styles.projectHead}>
-                  <Link to={`/projects/${p.id}`} className={styles.projectName}>
-                    {p.name}
-                  </Link>
-                  <Badge value={p.status} />
-                </div>
-                <p className={`muted small ${styles.desc}`}>{p.description || 'No description'}</p>
-                <div className={styles.meta}>
-                  <span className={styles.metaItem}>
-                    <ListChecks size={14} aria-hidden="true" />
-                    {p.taskCount ?? 0} task{p.taskCount === 1 ? '' : 's'}
-                  </span>
-                  <span>{new Date(p.createdAt).toLocaleDateString()}</span>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <ProjectGrid projects={projects.data} />
         )}
       </section>
     </>

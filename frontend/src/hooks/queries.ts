@@ -1,6 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as api from '../api/endpoints';
-import type { ProjectInput, TaskInput, TaskQuery } from '../api/types';
+import type { ProjectInput, ProjectQuery, TaskInput, TaskQuery } from '../api/types';
 
 export const keys = {
   stats: ['stats'] as const,
@@ -11,7 +11,12 @@ export const keys = {
 };
 
 export const useStats = () => useQuery({ queryKey: keys.stats, queryFn: api.getStats });
-export const useProjects = () => useQuery({ queryKey: keys.projects, queryFn: api.listProjects });
+export const useProjects = (query?: ProjectQuery) =>
+  useQuery({
+    queryKey: query ? [...keys.projects, 'list', query] : keys.projects,
+    queryFn: () => api.listProjects(query),
+    placeholderData: query ? keepPreviousData : undefined,
+  });
 export const useProject = (id: string) => useQuery({ queryKey: keys.project(id), queryFn: () => api.getProject(id) });
 
 export const useTasks = (projectId: string, query: TaskQuery) =>

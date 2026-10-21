@@ -7,6 +7,7 @@ import styles from './Layout.module.css';
 
 function pageTitle(pathname: string): string {
   if (pathname === '/') return 'Dashboard';
+  if (pathname === '/projects') return 'Projects';
   if (pathname === '/projects/new') return 'New project';
   if (pathname.endsWith('/edit')) return 'Edit project';
   if (pathname.startsWith('/projects/')) return 'Project';
@@ -38,7 +39,6 @@ export function Layout() {
   }, [open]);
 
   const title = pageTitle(pathname);
-  const onProject = pathname.startsWith('/projects/') && pathname !== '/projects/new';
   const initial = (user?.name?.trim()[0] ?? '?').toUpperCase();
   const nextTheme = theme === 'dark' ? 'light' : 'dark';
 
@@ -65,10 +65,15 @@ export function Layout() {
             <LayoutDashboard size={18} aria-hidden="true" />
             Dashboard
           </NavLink>
-          <Link to="/#projects" className={`${styles.link} ${onProject ? styles.active : ''}`}>
+          <NavLink
+            to="/projects"
+            className={({ isActive }) =>
+              `${styles.link} ${isActive && pathname !== '/projects/new' ? styles.active : ''}`
+            }
+          >
             <FolderKanban size={18} aria-hidden="true" />
             Projects
-          </Link>
+          </NavLink>
           <NavLink to="/projects/new" className={({ isActive }) => `${styles.link} ${isActive ? styles.active : ''}`}>
             <Plus size={18} aria-hidden="true" />
             New project

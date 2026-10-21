@@ -1,5 +1,5 @@
 import { api } from './client';
-import type { Paginated, Project, ProjectInput, Session, Stats, Task, TaskInput, TaskQuery, User } from './types';
+import type { Paginated, Project, ProjectInput, ProjectQuery, Session, Stats, Task, TaskInput, TaskQuery, User } from './types';
 
 export const authApi = {
   register: (b: { name: string; email: string; password: string }) =>
@@ -11,7 +11,8 @@ export const authApi = {
 
 export const getStats = () => api.get<Stats>('/stats').then((r) => r.data);
 
-export const listProjects = () => api.get<{ data: Project[] }>('/projects').then((r) => r.data.data);
+export const listProjects = (params?: ProjectQuery) =>
+  api.get<{ data: Project[] }>('/projects', { params }).then((r) => r.data.data);
 export const getProject = (id: string) => api.get<Project>(`/projects/${id}`).then((r) => r.data);
 export const createProject = (b: ProjectInput) => api.post<Project>('/projects', b).then((r) => r.data);
 export const updateProject = (id: string, b: Partial<ProjectInput>) =>

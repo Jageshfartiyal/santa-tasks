@@ -19,6 +19,11 @@ export interface Project {
   updatedAt: string;
 }
 
+export interface ProjectQuery {
+  q?: string;
+  status?: ProjectStatus;
+}
+
 export interface ProjectInput {
   name: string;
   description: string;
