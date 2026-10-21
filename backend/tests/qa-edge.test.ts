@@ -43,7 +43,7 @@ describe('QA regression: LIKE wildcards are matched literally', () => {
     const p = await createProject(u.auth, { name: 'Plain' });
     await request(app).post(`/api/projects/${p.id}/tasks`).set(u.auth).send({ title: 'abc' });
     await request(app).post(`/api/projects/${p.id}/tasks`).set(u.auth).send({ title: '100% done' });
-    for (const q of ['%', '_', '\']) {
+    for (const q of ['%', '_', String.fromCharCode(92)]) {
       const tasks = await request(app).get(`/api/projects/${p.id}/tasks`).query({ q }).set(u.auth);
       expect(tasks.body.meta.total, q).toBe(q === '%' ? 1 : 0);
       const projects = await request(app).get('/api/projects').query({ q }).set(u.auth);
